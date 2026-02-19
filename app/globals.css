@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --app-bg: 40 35% 96%;
+    --app-panel: 0 0% 100%;
+    --app-ink: 222 47% 11%;
+    --app-muted: 215 16% 47%;
+    --app-border: 220 13% 90%;
+
+    --app-brand: 174 65% 24%;
+    --app-brand2: 33 93% 54%;
+    --app-danger: 350 78% 42%;
+
+    --app-ring: 174 65% 24%;
+  }
+
+  .dark {
+    --app-bg: 215 28% 11%;
+    --app-panel: 222 25% 14%;
+    --app-ink: 210 40% 96%;
+    --app-muted: 215 20% 72%;
+    --app-border: 215 20% 22%;
+
+    --app-brand: 174 65% 44%;
+    --app-brand2: 33 93% 54%;
+    --app-danger: 350 78% 60%;
+
+    --app-ring: 174 65% 44%;
+  }
+
+  html {
+    color: hsl(var(--app-ink));
+    background: hsl(var(--app-bg));
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(900px 450px at 20% 0%, hsla(var(--app-brand2) / 0.18), transparent 55%),
+      radial-gradient(900px 450px at 80% 0%, hsla(var(--app-brand) / 0.16), transparent 55%),
+      linear-gradient(180deg, hsla(var(--app-bg) / 1), hsla(var(--app-bg) / 1));
+  }
+
+  .dark body {
+    background:
+      radial-gradient(900px 450px at 20% 0%, hsla(var(--app-brand2) / 0.08), transparent 60%),
+      radial-gradient(900px 450px at 80% 0%, hsla(var(--app-brand) / 0.10), transparent 60%),
+      repeating-linear-gradient(
+        45deg,
+        hsla(var(--app-ink) / 0.028),
+        hsla(var(--app-ink) / 0.028) 1px,
+        transparent 1px,
+        transparent 12px
+      ),
+      linear-gradient(180deg, hsla(var(--app-bg) / 1), hsla(var(--app-bg) / 1));
+  }
+
+  ::selection {
+    background: hsla(var(--app-brand2) / 0.35);
+  }
+
+  a {
+    color: hsl(var(--app-brand));
+  }
+
+  a:hover {
+    color: hsla(var(--app-brand) / 0.9);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsla(var(--app-ring) / 0.35);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen;
+  }
+
+  .app-page {
+    @apply container mx-auto py-6 md:py-12;
+  }
+
+  .drawer-overlay-transition {
+    transition: opacity 240ms ease;
+    will-change: opacity;
+  }
+
+  .drawer-overlay-open {
+    opacity: 1;
+  }
+
+  .drawer-overlay-closed {
+    opacity: 0;
+  }
+
+  .drawer-panel-transition {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+
+  .drawer-panel-open {
+    transform: translateX(0);
+  }
+
+  .drawer-panel-closed {
+    transform: translateX(100%);
+  }
+
+  @supports (transition-behavior: allow-discrete) {
+    .drawer-panel-open {
+      @starting-style {
+        transform: translateX(100%);
+      }
+    }
+  }
+
+  .app-title {
+    @apply font-serif text-3xl font-semibold tracking-tight text-app-ink;
+  }
+
+  .app-subtitle {
+    @apply mt-2 text-sm text-app-muted;
+  }
+
+  .panel {
+    @apply rounded-2xl border border-app-border bg-app-panel shadow-panel;
+  }
+
+  .panel-pad {
+    @apply p-5 md:p-6;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-app-border bg-app-panel px-3 py-2 text-sm text-app-ink shadow-sm;
+  }
+
+  .input:focus {
+    @apply border-transparent ring-2 ring-app-brand/25;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold;
+  }
+
+  .btn-primary {
+    @apply btn bg-app-brand text-white shadow-sm hover:bg-app-brand/90;
+  }
+
+  .btn-ghost {
+    @apply btn border border-app-border bg-app-panel text-app-ink hover:bg-app-panel/80;
+  }
+
+  .btn-danger {
+    @apply btn bg-app-danger text-white hover:bg-app-danger/90;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold;
+  }
+}
