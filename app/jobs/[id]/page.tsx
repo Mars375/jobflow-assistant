@@ -6,9 +6,9 @@ import { AppHeader } from '@/components/layout/app-header'
 import { markJobAsSeen } from '@/app/actions/jobs'
 
 type JobDetailPageProps = {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 function getSourceLabel(source: string): string {
@@ -18,17 +18,18 @@ function getSourceLabel(source: string): string {
 }
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
+  const { id } = await params
   const session = await verifySession()
   if (!session) {
     redirect('/login')
   }
 
-  const job = await prisma.jobPosting.findUnique({ where: { id: params.id } })
+  const job = await prisma.jobPosting.findUnique({ where: { id } })
   if (!job) {
     redirect('/jobs')
   }
 
-  await markJobAsSeen(params.id)
+  await markJobAsSeen(id)
 
   const sourceLabel = getSourceLabel(job.source)
   const publishedAt = job.publishedAt ? new Date(job.publishedAt).toLocaleDateString('fr-FR') : 'Date indisponible'

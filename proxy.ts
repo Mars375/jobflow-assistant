@@ -8,7 +8,7 @@ function isExactOrSegmentMatch(path: string, route: string): boolean {
   return path === route || path.startsWith(`${route}/`)
 }
 
-export default async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   // Rate limit auth API routes
@@ -57,7 +57,7 @@ export default async function middleware(request: NextRequest) {
   let isAuthenticated = false
 
   if (accessToken) {
-    // NOTE: Cannot import from 'server-only' modules in middleware (Edge runtime).
+    // NOTE: Cannot import from 'server-only' modules in proxy (nodejs runtime).
     // Use jose directly here for JWT verification.
     try {
       const { jwtVerify } = await import('jose')

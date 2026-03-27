@@ -3,7 +3,7 @@ import { verifySession } from '@/lib/auth/session'
 import { calculateJobMatch } from '@/lib/matching/service'
 
 type Params = {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export const runtime = 'nodejs'
@@ -14,8 +14,10 @@ export async function GET(_request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   }
 
+  const { id } = await params
+
   try {
-    const result = await calculateJobMatch(session.userId, params.id)
+    const result = await calculateJobMatch(session.userId, id)
     return NextResponse.json(result.explanation)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to calculate match'

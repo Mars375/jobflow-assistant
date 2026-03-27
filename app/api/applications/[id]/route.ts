@@ -4,7 +4,7 @@ import { verifySession } from '@/lib/auth/session'
 import { updateApplicationSchema } from '@/lib/applications/validation'
 
 type Params = {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 const RESPONSE_STATUSES = new Set<string>(['ENTRETIEN', 'OFFRE', 'REFUSE'])
@@ -15,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const id = params.id
+  const { id } = await params
   if (!id) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
   }
