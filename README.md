@@ -1,105 +1,92 @@
 # JobFlow Assistant
 
-France-focused job discovery + application tracking, with daily digests and real-time alerts.
+> France-focused job discovery and application tracking — with daily digests, real-time Slack and Telegram alerts.
 
-## What You Get
+Aggregates job listings from France Travail and Adzuna, matches them against your CV using keyword scoring, and tracks your applications in a Kanban + table view. Sends daily email digests and fires real-time alerts to Slack or Telegram when strong matches appear.
 
-- Job feed aggregation (France Travail + optional Adzuna)
-- CV/profile matching (keyword + embeddings when available)
-- Application tracker (Kanban + table)
-- Alerts:
-  - Daily email digest (top matches)
-  - Real-time Slack alerts (Incoming Webhook)
-  - Real-time Telegram alerts (single app bot + connect flow)
+## Features
 
-## Tech Stack
+- **Job feed** — aggregates listings from France Travail + optional Adzuna
+- **CV matching** — keyword scoring (+ embeddings when available)
+- **Application tracker** — Kanban board + table view
+- **Daily digest** — email summary of top matches via Resend
+- **Real-time alerts** — Slack Incoming Webhook + Telegram bot
+- **Telegram connect flow** — users link their account without exposing a token
 
-- Next.js (App Router)
-- Prisma + Postgres (Neon)
-- Tailwind CSS
-- Resend for emails
-- Slack Incoming Webhooks
-- Telegram Bot API (webhook)
+## Stack
 
-## Local Development
+| Layer | Tech |
+|---|---|
+| Framework | Next.js (App Router) |
+| Database | Neon Postgres + Prisma |
+| Email | Resend |
+| Notifications | Slack Incoming Webhooks, Telegram Bot API |
+| UI | Tailwind CSS |
+| Deploy | Vercel |
 
-1) Install dependencies
+## Getting Started
 
 ```bash
+git clone https://github.com/your-username/jobflow-assistant.git
+cd jobflow-assistant
 npm install
-```
-
-2) Configure environment
-
-```bash
 cp .env.example .env
 ```
 
-Fill at minimum:
-- `DATABASE_URL`
-- `NEXT_PUBLIC_APP_URL` (usually `http://localhost:3000`)
-- `TOKEN_SECRET`
+Fill in `.env` — at minimum:
 
-3) Sync database schema
+```env
+DATABASE_URL=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+TOKEN_SECRET=
+
+# Email
+RESEND_API_KEY=
+
+# Cron endpoint protection
+CRON_SECRET=
+
+# Telegram
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_BOT_USERNAME=     # without @
+TELEGRAM_WEBHOOK_SECRET=
+```
+
+Sync the schema and start dev:
 
 ```bash
 npm run db:push
-```
-
-4) Start dev server
-
-```bash
 npm run dev
 ```
 
-## Environment Variables
-
-See `.env.example` for the full list.
-
-Key variables:
-- `DATABASE_URL`
-- `NEXT_PUBLIC_APP_URL`
-- `RESEND_API_KEY`
-- `CRON_SECRET` (protects internal cron endpoints)
-
-Telegram:
-- `TELEGRAM_BOT_TOKEN` (server-side only)
-- `TELEGRAM_BOT_USERNAME` (without `@`)
-- `TELEGRAM_WEBHOOK_SECRET` (Telegram secret_token header)
-
 ## Cron Endpoints
 
-These endpoints are protected by `CRON_SECRET` using `Authorization: Bearer <CRON_SECRET>`.
-
-- `POST /api/alerts/digest`
-  - Sends daily digest to eligible users.
-- `POST /api/alerts/trigger`
-  - Triggers realtime alerts for a batch of `{ userId, jobId, score }`.
-
-Example:
+Both endpoints require `Authorization: Bearer <CRON_SECRET>`.
 
 ```bash
+# Daily digest — top job matches for all users
 curl -X POST "$NEXT_PUBLIC_APP_URL/api/alerts/digest" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+# Real-time alerts — trigger for a batch of matches
+curl -X POST "$NEXT_PUBLIC_APP_URL/api/alerts/trigger" \
   -H "Authorization: Bearer $CRON_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -d '[{"userId": "...", "jobId": "...", "score": 0.91}]'
 ```
 
-## Telegram Connect Flow (Recommended)
+Configure these in `vercel.json` using `crons` to run automatically on a schedule.
 
-The app uses a single Telegram bot token on the server. Users do NOT paste tokens.
+## Telegram Connect Flow
 
-Flow:
-- User clicks "Connecter Telegram" in `/account/notifications`
-- They are redirected to `https://t.me/<bot>?start=<signed_token>`
-- They click Start
-- Telegram webhook binds `chat_id` to the user
+The app uses a single bot token server-side — users never paste tokens.
 
-Endpoints:
-- `GET /api/integrations/telegram/connect` (signed redirect)
-- `POST /api/integrations/telegram/webhook` (Telegram webhook)
+1. User clicks **Connecter Telegram** in `/account/notifications`
+2. They're redirected to `https://t.me/<bot>?start=<signed_token>`
+3. They click Start in Telegram
+4. The webhook binds their `chat_id` to their account
 
-To set Telegram webhook:
+Set the Telegram webhook once after deploying:
 
 ```bash
 curl -sS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
@@ -107,20 +94,16 @@ curl -sS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
   -d "secret_token=$TELEGRAM_WEBHOOK_SECRET"
 ```
 
-## Deployment (Vercel)
+## Deploy
 
-Recommended setup:
+1. Deploy to Vercel from the repo
+2. Add all env vars in **Project → Settings → Environment Variables**
+3. Run the Telegram `setWebhook` command above with your production URL
+4. Configure cron jobs in `vercel.json`
 
-1) Deploy from a branch containing only the app (no extra directories)
-2) Set env vars in Vercel Project Settings
-3) Configure Telegram `setWebhook` to your production URL
+## Security
 
-## Security Notes
-
-- Never commit `.env`
-- Telegram bot token stays server-side only
-- Slack webhooks are validated to avoid SSRF
-
----
-
-If you want: add a CONTRIBUTING.md and a one-command bootstrap script for local setup.
+- Never commit `.env` — add it to `.gitignore`
+- `TELEGRAM_BOT_TOKEN` is server-side only
+- Slack webhooks are validated before use
+- Cron endpoints are protected by `CRON_SECRET`
