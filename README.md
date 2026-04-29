@@ -1,109 +1,97 @@
 # JobFlow Assistant
 
-> France-focused job discovery and application tracking — with daily digests, real-time Slack and Telegram alerts.
+A France-focused job search assistant that combines job aggregation, CV-based matching, application tracking, and multi-channel alerts.
 
-Aggregates job listings from France Travail and Adzuna, matches them against your CV using keyword scoring, and tracks your applications in a Kanban + table view. Sends daily email digests and fires real-time alerts to Slack or Telegram when strong matches appear.
+JobFlow Assistant pulls job listings from France Travail and Adzuna, matches them against a user's profile and CV, tracks applications, and sends notifications by email, Slack, and Telegram. The current repo also includes account security flows, GDPR export/deletion tooling, smoke tests, and embedding-based matching support.
 
 ## Features
 
-- **Job feed** — aggregates listings from France Travail + optional Adzuna
-- **CV matching** — keyword scoring (+ embeddings when available)
-- **Application tracker** — Kanban board + table view
-- **Daily digest** — email summary of top matches via Resend
-- **Real-time alerts** — Slack Incoming Webhook + Telegram bot
-- **Telegram connect flow** — users link their account without exposing a token
+- Job aggregation from France Travail and optional Adzuna fallback
+- CV upload and parsing with profile data storage
+- Job matching using keyword scoring, with semantic matching when embeddings are available
+- Application tracking with board and table-style UI
+- Application export to CSV
+- Daily email digests via Resend
+- Real-time alerts via Slack webhook and Telegram
+- Telegram account linking through a signed connect flow
+- Unread job tracking and sync endpoints
+- Account management including password changes and notification settings
+- GDPR tooling for export and hard deletion
+- Tests for auth and matching logic, plus a smoke-test script for deployed/runtime checks
 
-## Stack
+## Tech Stack
 
-| Layer | Tech |
-|---|---|
-| Framework | Next.js (App Router) |
-| Database | Neon Postgres + Prisma |
-| Email | Resend |
-| Notifications | Slack Incoming Webhooks, Telegram Bot API |
-| UI | Tailwind CSS |
-| Deploy | Vercel |
+- **Framework:** Next.js 16, React 19, TypeScript
+- **Database:** Neon Postgres + Prisma
+- **Auth/session layer:** custom session + token flow with `jose` and `bcryptjs`
+- **Queue / rate limiting:** Upstash Redis
+- **Email:** Resend + React Email
+- **AI / embeddings:** OpenAI
+- **Vector support:** pgvector
+- **Job sources:** France Travail API, Adzuna API
+- **UI:** Tailwind CSS v4
+- **Testing:** Vitest
 
-## Getting Started
+## Local Setup
 
 ```bash
-git clone https://github.com/your-username/jobflow-assistant.git
+git clone https://github.com/Mars375/jobflow-assistant.git
 cd jobflow-assistant
 npm install
 cp .env.example .env
 ```
 
-Fill in `.env` — at minimum:
+Fill in the variables from `.env.example`:
 
 ```env
 DATABASE_URL=
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
 TOKEN_SECRET=
-
-# Email
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 RESEND_API_KEY=
-
-# Cron endpoint protection
 CRON_SECRET=
-
-# Telegram
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+EMAIL_FROM="JobFlow Assistant <onboarding@resend.dev>"
+FRANCE_TRAVAIL_CLIENT_ID=
+FRANCE_TRAVAIL_CLIENT_SECRET=
+FRANCE_TRAVAIL_SCOPE="api_offresdemploiv2 o2dsoffre"
+ADZUNA_APP_ID=
+ADZUNA_APP_KEY=
 TELEGRAM_BOT_TOKEN=
-TELEGRAM_BOT_USERNAME=     # without @
+TELEGRAM_BOT_USERNAME=
 TELEGRAM_WEBHOOK_SECRET=
 ```
 
-Sync the schema and start dev:
+Set up the database and start the app:
 
 ```bash
 npm run db:push
 npm run dev
 ```
 
-## Cron Endpoints
-
-Both endpoints require `Authorization: Bearer <CRON_SECRET>`.
+## Available Scripts
 
 ```bash
-# Daily digest — top job matches for all users
-curl -X POST "$NEXT_PUBLIC_APP_URL/api/alerts/digest" \
-  -H "Authorization: Bearer $CRON_SECRET"
-
-# Real-time alerts — trigger for a batch of matches
-curl -X POST "$NEXT_PUBLIC_APP_URL/api/alerts/trigger" \
-  -H "Authorization: Bearer $CRON_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '[{"userId": "...", "jobId": "...", "score": 0.91}]'
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run db:push
+npm run db:generate
+npm run test
+npm run test:watch
+npm run test:coverage
+npm run test:smoke
 ```
 
-Configure these in `vercel.json` using `crons` to run automatically on a schedule.
+## Deployment Notes
 
-## Telegram Connect Flow
+The repo contains routes for daily digests, real-time alerts, Telegram webhooks, and job sync / embedding workflows. Those flows require the relevant environment variables to be configured before they work in a deployed environment.
 
-The app uses a single bot token server-side — users never paste tokens.
+## Project Status
 
-1. User clicks **Connecter Telegram** in `/account/notifications`
-2. They're redirected to `https://t.me/<bot>?start=<signed_token>`
-3. They click Start in Telegram
-4. The webhook binds their `chat_id` to their account
+**Current status: substantial application prototype.**
 
-Set the Telegram webhook once after deploying:
-
-```bash
-curl -sS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
-  -d "url=$NEXT_PUBLIC_APP_URL/api/integrations/telegram/webhook" \
-  -d "secret_token=$TELEGRAM_WEBHOOK_SECRET"
-```
-
-## Deploy
-
-1. Deploy to Vercel from the repo
-2. Add all env vars in **Project → Settings → Environment Variables**
-3. Run the Telegram `setWebhook` command above with your production URL
-4. Configure cron jobs in `vercel.json`
-
-## Security
-
-- Never commit `.env` — add it to `.gitignore`
-- `TELEGRAM_BOT_TOKEN` is server-side only
-- Slack webhooks are validated before use
-- Cron endpoints are protected by `CRON_SECRET`
+The repository already goes beyond a simple demo: it includes auth, jobs sync, matching, notifications, application tracking, GDPR export/deletion, and smoke tests. It still relies on multiple external services and credentials, and some advanced behavior—especially embeddings and integrations—only becomes active when those services are configured.
